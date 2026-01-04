@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>có 3 phút thôi ní ráng làm xíu nhé </title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#c5d818;
+  color:white;
+  padding:20px;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  background:#1e293b;
+  padding:20px;
+  border-radius:16px;
+}
+h1{text-align:center}
+.timer{
+  position:sticky;
+  top:0;
+  background:#facc15;
+  color:rgb(0, 0, 0);
+  padding:10px;
+  text-align:center;
+  border-radius:12px;
+  font-size:20px;
+  margin-bottom:16px;
+}
+.question{
+  background:#b86196;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:14px;
+}
+.answers label{
+  display:block;
+  padding:6px;
+  border-radius:8px;
+  margin:6px 0;
+  cursor:pointer;
+}
+.correct{background:#14532d;color:#bbf7d0}
+.wrong{background:#7f1d1d;color:#fecaca}
+button{
+  display:block;
+  margin:20px auto;
+  padding:12px 26px;
+  font-size:16px;
+  border:none;
+  border-radius:12px;
+  background:#4f46e5;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1>25 câu ní cố nhé </h1>
+
+<div class="timer">
+⏱ Thời gian ní chiến đấu kkk: <span id="time">03:00</span>
+</div>
+
+<div id="quiz"></div>
+
+<button onclick="submitQuiz()"> Nộp bài</button>
+</div>
+
+<!-- 🔊 NHẠC NỀN -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="bai1.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ===== DỮ LIỆU ===== */
+let data=[
+ ["Able","có thể"],
+ ["Abandon","bỏ"],
+ ["About","khoảng, về"],
+ ["Above","lên, trên"],
+ ["Act","hành động"],
+ ["Add","thêm"],
+ ["Afraid","sợ"],
+ ["After","sau"],
+ ["Again","lại"],
+ ["Age","tuổi"],
+ ["Ago","trước đây"],
+ ["Agree","đồng ý"],
+ ["Air","bầu không khí"],
+ ["All","tất cả"],
+ ["Allow","cho phép"],
+ ["Also","cũng vậy"],
+ ["Always","luôn luôn"],
+ ["Among","ở giữa"],
+ ["And","và"],
+ ["Anger","tức giận"],
+ ["Animal","động vật"],
+ ["Answer","câu trả lời"],
+["Appear","xuất hiện"],
+["Apple","quả táo"],
+["Area","diện tích khu vực"]
+];
+
+/* ===== TRỘN ===== */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+data=shuffle(data);
+const quiz=document.getElementById("quiz");
+
+/* ===== TẠO CÂU HỎI ===== */
+data.forEach((q,i)=>{
+  const correct=q[1];
+  const wrong=shuffle(
+    data.map(x=>x[1]).filter(v=>v!==correct)
+  ).slice(0,3);
+
+  const answers=shuffle([correct,...wrong]);
+
+  const div=document.createElement("div");
+  div.className="question";
+  div.dataset.correct=correct;
+
+  div.innerHTML=`
+    <strong>Câu ${i+1}: ${q[0]}</strong>
+    <div class="answers">
+      ${answers.map((a,j)=>`
+        <label>
+          <input type="radio" name="q${i}" value="${a}">
+          ${String.fromCharCode(65+j)}. ${a}
+        </label>
+      `).join("")}
+    </div>
+  `;
+  quiz.appendChild(div);
+});
+
+/* ===== PHÁT NHẠC 1 LẦN DUY NHẤT ===== */
+const bgMusic = document.getElementById("bgMusic");
+let musicStarted = false;
+
+document.addEventListener("change", e=>{
+  if(e.target.type==="radio" && !musicStarted){
+    bgMusic.volume = 0.4;   // chỉnh âm lượng
+    bgMusic.play();
+    musicStarted = true;
+  }
+});
+
+/* ===== ĐỒNG HỒ ===== */
+let timeLeft=180;
+let submitted=false;
+const timeEl=document.getElementById("time");
+
+const timer=setInterval(()=>{
+  const m=Math.floor(timeLeft/60);
+  const s=timeLeft%60;
+  timeEl.textContent=
+    `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+
+  if(timeLeft<=0){
+    clearInterval(timer);
+    if(!submitted){
+      alert("⏰ Hết giờ!");
+      submitQuiz();
+    }
+  }
+  timeLeft--;
+},1000);
+
+/* ===== NỘP BÀI ===== */
+function submitQuiz(){
+  if(submitted) return;
+  submitted=true;
+  clearInterval(timer);
+
+  /* DỪNG NHẠC */
+  bgMusic.pause();
+  bgMusic.currentTime = 0;
+
+  let score=0;
+
+  document.querySelectorAll(".question").forEach(q=>{
+    const correct=q.dataset.correct;
+    const chosen=q.querySelector("input:checked");
+
+    q.querySelectorAll("label").forEach(lb=>{
+      const v=lb.querySelector("input").value;
+      if(v===correct) lb.classList.add("correct");
+    });
+
+    if(chosen){
+      if(chosen.value===correct) score++;
+      else chosen.parentElement.classList.add("wrong");
+    }
+  });
+
+  document.querySelectorAll("input").forEach(i=>i.disabled=true);
+
+  let message="";
+  if(score===25){
+    message="🏆 Nhi thật tuyệt vời quá 10 điểm gót chóp năm bờ vang!";
+  }else if(score>=20){
+    message="👏 Nhi giỏi quá!";
+  }else if(score>=15){
+    message="🤔 Quên rồi chứ gì!";
+  }else if(score>=1){
+    message="😢 Nhi làm tôi buồn hen!";
+  }else{
+    message="😴 Cố gắng hơn nhé!";
+  }
+
+  alert(
+    "🎯 KẾT QUẢ NHI È\n\n" +
+    "✅ Đúng: " + score + " / 25 câu\n\n" +
+    message
+  );
+}
+</script>
+</body>
+</html>
